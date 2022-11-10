@@ -1,0 +1,98 @@
+version: '3'
+
+services:
+  #dependency
+  redis:
+    image: redis:5.0.3
+    container_name: redis
+    environment:
+      - redisHost=localhost
+      - redisPort=6379
+    ports:
+      - 6379:6379
+    networks:
+      - network
+  elasticsearch:
+    image: elasticsearch:7.8.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300      
+    networks:
+      - network
+  postgres:
+    image: postgres:11.2
+    container_name: postgres
+    environment:
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=todo
+      - POSTGRES_USER=todo
+      - POSTGRES_PASSWORD=todo1234
+    ports:
+      - 5432:5432      
+    networks:
+      - network
+
+  # api 
+  todo-api:
+    container_name: todo-api
+    build: ./todo-api
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/src/todo-api
+      - /src/todo-api/node_modules
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=todo
+      - POSTGRES_USER=todo
+      - POSTGRES_PASSWORD=todo1234
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+    networks:
+      - network      
+
+  # frontend
+  todo-view:
+    container_name: todo-view
+    build: ./todo-view
+    ports:
+      - 4300:4300
+    volumes:
+      - .:/src/todo-view
+      - /src/todo-view/node_modules
+    environment:
+      - PORT=4200
+    networks:
+      - network
+
+  # nginx proxy
+  todo-proxy:
+    container_name: todo-proxy
+    build:
+      context: ./todo-proxy
+    ports:
+      - 8080:80
+    depends_on:
+      - todo-api
+      - todo-view
+    networks:
+      - network      
+
+volumes:
+  es_data:
+    name: es_data
+    driver: local
+
+networks:
+  network:
+    driver: bridge
+    name: localnet
