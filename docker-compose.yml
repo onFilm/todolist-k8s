@@ -80,7 +80,7 @@ services:
       - .:/src/todo-view
       - /src/todo-view/node_modules
     environment:
-      - PORT=4200
+      - PORT=4300
     networks:
       - network
 
