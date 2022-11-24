@@ -2,29 +2,22 @@ version: '3'
 
 services:
   #dependency
-  redis:
+  todo-redis:
     image: redis:5.0.3
     container_name: redis
-    environment:
-      - redisHost=localhost
-      - redisPort=6379
     ports:
       - 6379:6379
-    networks:
-      - network
-  elasticsearch:
+
+  todo-elasticsearch:
     image: elasticsearch:7.8.0
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
       - 9300:9300      
-    networks:
-      - network
-  postgres:
+
+  todo-postgres:
     image: postgres:11.2
     container_name: postgres
     environment:
@@ -35,8 +28,6 @@ services:
       - POSTGRES_PASSWORD=todo1234
     ports:
       - 5432:5432      
-    networks:
-      - network
 
   # api 
   todo-api:
@@ -48,26 +39,24 @@ services:
       - .:/src/todo-api
       - /src/todo-api/node_modules
     environment:
-      - POSTGRES_HOST=postgres
+      - POSTGRES_HOST=todo-postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DATABASE=todo
       - POSTGRES_USER=todo
       - POSTGRES_PASSWORD=todo1234
-      - REDIS_HOST=redis
+      - REDIS_HOST=todo-redis
       - REDIS_PORT=6379
-      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_HOST=todo-elasticsearch
       - ELASTICSEARCH_PORT=9200
-    networks:
-      - network      
+    depends_on:
+      - todo-redis
+      - todo-elasticsearch
+      - todo-postgres      
 
   # frontend
   todo-view:
     container_name: todo-view
     build: ./todo-view
-    depends_on:
-      - redis
-      - elasticsearch
-      - postgres
     ports:
       - 4300:4300
     volumes:
@@ -75,8 +64,8 @@ services:
       - /src/todo-view/node_modules
     environment:
       - PORT=4300
-    networks:
-      - network
+    depends_on:
+      - todo-api
 
   # nginx proxy
   todo-proxy:
@@ -88,15 +77,3 @@ services:
     depends_on:
       - todo-api
       - todo-view
-    networks:
-      - network      
-
-volumes:
-  es_data:
-    name: es_data
-    driver: local
-
-networks:
-  network:
-    driver: bridge
-    name: localnet
