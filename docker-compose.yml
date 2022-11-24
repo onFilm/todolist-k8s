@@ -36,7 +36,7 @@ services:
     build: ./todo-api
     ports:
       - 3000:3000
-    command: sh /src/start.sh
+    command: sh /src/todo-api/start.sh
     volumes:
       - .:/src/todo-api
       - /src/todo-api/node_modules
