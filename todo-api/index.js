@@ -76,7 +76,7 @@ app.route('/api/v1/todos').get( async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
     // First, try get todos from cache (get all members of Set)
-    await redisClient.sMembers('todos', async (error, cachedTodoSet) => { //["Get kids from school","Take out the trash","Go shopping"]
+    await redisClient.smembers('todos', async (error, cachedTodoSet) => { //["Get kids from school","Take out the trash","Go shopping"]
         if (error) {
             console.log('  Redis get todos error: ' + error);
         }
@@ -117,7 +117,7 @@ app.route('/api/v1/todos').post( async (req, res) => {
     });
 
     // Update the Redis cache (add the todo text to the Set in Redis)
-    await redisClient.sAdd(['todos', todoTitle], (error, reply) => {
+    await redisClient.sadd(['todos', todoTitle], (error, reply) => {
         if (error) {
             throw error;
         }
